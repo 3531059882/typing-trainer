@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>打字训练</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --background: #f7f3ec;
+      --foreground: #1f2933;
+      --card: #fffaf2;
+      --card-foreground: #1f2933;
+      --primary: #2367c9;
+      --primary-foreground: #ffffff;
+      --secondary: #e7edf5;
+      --muted: #e9e0d4;
+      --muted-foreground: #6b7280;
+      --accent: #dcecff;
+      --destructive: #c2410c;
+      --border: #d8cfc4;
+      --input: #c9c0b6;
+      --ring: #3b82f6;
+      --trainer-good: #dcebd1;
+      --trainer-bad: #f8d8c8;
+      --trainer-current: #d7e8ff;
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+      font-size: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--foreground);
+      background: var(--background);
+    }
+
+    .page {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 42px;
+    }
+
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    .header-note {
+      color: var(--muted-foreground);
+      font-size: 14px;
+    }
+
+    .trainer-shell {
+      display: grid;
+      gap: 16px;
+    }
+
+    .trainer-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .trainer-select-wrap {
+      min-width: min(100%, 288px);
+    }
+
+    .custom-panel {
+      display: none;
+      gap: 12px;
+    }
+
+    .custom-panel.is-visible {
+      display: grid;
+    }
+
+    .trainer-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      color: var(--card-foreground);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .viz-stat-value {
+      margin-top: 6px;
+      font-size: 28px;
+      font-weight: 500;
+    }
+
+    .text-small {
+      font-size: 13px;
+    }
+
+    .text-muted {
+      color: var(--muted-foreground);
+    }
+
+    .text-destructive {
+      color: var(--destructive);
+    }
+
+    .complete {
+      color: var(--foreground);
+    }
+
+    .form-label {
+      display: grid;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+    .form-select,
+    .form-control {
+      width: 100%;
+      color: var(--foreground);
+      background: #ffffff;
+      border: 1px solid var(--input);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font: inherit;
+    }
+
+    .form-control {
+      min-height: 128px;
+      resize: vertical;
+      line-height: 1.7;
+    }
+
+    .custom-panel .form-control {
+      min-height: 112px;
+    }
+
+    .form-select:focus,
+    .form-control:focus,
+    .btn:focus {
+      outline: 3px solid color-mix(in srgb, var(--ring) 30%, transparent);
+      outline-offset: 2px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: fit-content;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--foreground);
+      padding: 10px 14px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background: #1f5caf;
+    }
+
+    .viz-row,
+    .trainer-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .trainer-footer {
+      justify-content: space-between;
+    }
+
+    .prompt-text {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 3px 1px;
+      overflow-wrap: anywhere;
+      line-height: 1.9;
+    }
+
+    .char {
+      min-width: 0.52em;
+      padding: 1px 2px;
+      border-radius: 4px;
+      border-bottom: 2px solid transparent;
+    }
+
+    .char.space {
+      min-width: 0.62em;
+    }
+
+    .char.correct {
+      background: var(--trainer-good);
+    }
+
+    .char.wrong {
+      background: var(--trainer-bad);
+      border-bottom-color: var(--destructive);
+    }
+
+    .char.current {
+      background: var(--trainer-current);
+      border-bottom-color: var(--primary);
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100% - 20px, 1100px);
+        padding-top: 18px;
+      }
+
+      .app-header,
+      .trainer-top {
+        grid-template-columns: 1fr;
+        display: grid;
+        align-items: start;
+      }
+
+      .trainer-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 420px) {
+      .trainer-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="app-header">
+      <h1>打字训练</h1>
+      <div class="header-note">支持中文、英文、自定义粘贴文章</div>
+    </header>
+
+    <section id="typing-trainer" class="trainer-shell" aria-label="打字训练工具">
+      <div class="trainer-top">
+        <label class="form-label trainer-select-wrap" for="typing-passage">
+          练习内容
+          <select id="typing-passage" class="form-select">
+            <option value="cn-basic">中文短句</option>
+            <option value="cn-article">中文短篇文章</option>
+            <option value="cn-long">中文长篇文章</option>
+            <option value="custom">自己粘贴文章</option>
+            <option value="cn-punct">中文标点</option>
+            <option value="en-basic">English basics</option>
+            <option value="mixed">中英混合</option>
+          </select>
+        </label>
+        <button id="typing-reset" class="btn" type="button">重新开始</button>
+      </div>
+
+      <div id="typing-custom-panel" class="custom-panel">
+        <label class="form-label" for="typing-custom-text">
+          自定义文章
+          <textarea id="typing-custom-text" class="form-control" autocomplete="off" spellcheck="false"></textarea>
+        </label>
+        <div class="viz-row">
+          <button id="typing-apply-custom" class="btn btn-primary" type="button">使用这篇</button>
+        </div>
+      </div>
+
+      <div class="trainer-stats" aria-live="polite">
+        <div class="card">
+          <div class="text-muted">速度</div>
+          <div id="typing-wpm" class="viz-stat-value">0</div>
+          <div class="text-small text-muted">WPM</div>
+        </div>
+        <div class="card">
+          <div class="text-muted">准确率</div>
+          <div id="typing-accuracy" class="viz-stat-value">100%</div>
+          <div class="text-small text-muted">当前输入</div>
+        </div>
+        <div class="card">
+          <div class="text-muted">错误</div>
+          <div id="typing-errors" class="viz-stat-value">0</div>
+          <div class="text-small text-muted">字符</div>
+        </div>
+        <div class="card">
+          <div class="text-muted">用时</div>
+          <div id="typing-time" class="viz-stat-value">0s</div>
+          <div class="text-small text-muted">开始后计时</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="typing-prompt" class="prompt-text" aria-label="待输入文本"></div>
+      </div>
+
+      <label class="form-label" for="typing-input">
+        输入区
+        <textarea id="typing-input" class="form-control" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+      </label>
+
+      <div class="trainer-footer">
+        <span id="typing-status" class="text-small text-muted">输入第一个字符后开始计时。</span>
+        <button id="typing-next" class="btn btn-primary" type="button">换一段</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const root = document.getElementById('typing-trainer');
+      const passages = {
+        'cn-basic': [
+          '清晨的阳光落在书桌上，键盘声像一串稳定的节拍。',
+          '保持呼吸平稳，眼睛看着文字，手指自然回到基准键。',
+          '速度来自熟悉，准确来自耐心，每一次练习都会更顺手。'
+        ],
+        'cn-article': [
+          '傍晚的风从窗边经过，带来一点雨后的凉意。街灯一盏接一盏亮起来，行人放慢脚步，像是终于从忙碌的一天里退了出来。桌上的书还摊开着，杯子里有半杯温水，键盘等待着下一段安静而专注的练习。',
+          '学习打字并不只是在追求速度。真正重要的是让眼睛、手指和注意力慢慢配合起来。开始时可以慢一些，把每一个字都打准；等到错误减少，节奏自然会稳定，速度也会在不知不觉中提高。',
+          '小城的菜市场总是醒得很早。摊主把新鲜的蔬菜摆成整齐的一排，水珠还挂在叶片上。有人挑选番茄，有人询问价格，热气从早餐铺里升起来，把普通的早晨变得温暖又真实。',
+          '雨停以后，巷子里的石板路泛着淡淡的光。孩子们踩着小水洼往前跑，笑声穿过墙角的青苔。老人坐在门口整理花盆，偶尔抬头看看天空，好像在确认下一阵风会从哪里来。',
+          '图书馆的下午很适合练习专注。窗外的树影轻轻摇晃，纸页翻动的声音很小。每个人都在自己的位置上慢慢前进，有的人读完一本书，有的人写完一段话，也有人学会了安静地坚持。',
+          '练习不必每天都很长，但最好每天都有一点。五分钟也可以，十分钟也很好。重要的是保持开始的动作，让自己一次次回到键盘前，把看似普通的小进步慢慢积累起来。'
+        ],
+        'cn-long': [
+          '清晨，学校的操场还带着夜里的凉意。值日的同学提前来到教室，打开窗户，让新鲜空气慢慢流进来。黑板被擦得很干净，粉笔整齐地放在盒子里，桌椅也排成一条条直线。等到早读铃声响起，大家翻开课本，声音一点点汇在一起。有人读得快，有人读得慢，但每个人都在用自己的方式开始新的一天。学习有时候并不热闹，却像一条小路，只要每天往前走几步，就会离目标更近一些。',
+          '外婆家的院子在村子的尽头。院墙边种着几棵石榴树，春天开花，秋天结果，到了夏天就撑起一片不大的树荫。小时候，我常坐在小板凳上看外婆择菜，她把菜叶一片片分开，把泥土洗净，再放进竹篮里。她做事总是不慌不忙，好像每一个动作都有自己的顺序。后来我才明白，许多生活里的本领不是一下子学会的，而是在重复中慢慢变熟。打字也是这样，手指记住了位置，心就不容易慌。',
+          '图书馆的三楼靠近窗边，有一排安静的座位。下午的阳光从玻璃上斜斜地照进来，落在书页和笔记本上。有人在查资料，有人在准备考试，还有人只是安静地读一本喜欢的书。这里没有人催促，也没有太多声音，时间好像放慢了脚步。专注并不是把世界关在门外，而是把注意力轻轻放在眼前的事情上。打字练习时也一样，不必一直想着速度，只要看准每一个字，慢慢把它输入出来，节奏自然会稳定下来。',
+          '周末的下午，我和朋友一起整理旧书。书架上有练习册、故事书、画册，还有一些已经泛黄的笔记本。翻开以前的作业，能看到歪歪扭扭的字，也能看到老师用红笔写下的批语。那些曾经觉得很难的内容，现在再看已经不那么可怕。成长就是这样，当我们走过一段路，再回头看，会发现自己比想象中走得更远。于是也会更相信，今天觉得困难的事，将来也会成为经历的一部分。'
+        ],
+        'cn-punct': [
+          '今天要练习：逗号、句号、冒号；还有问号？当然也有感叹号！',
+          '输入中文时，注意标点位置；不要着急，先准确，再提速。',
+          '“慢一点没关系。”他说，“关键是每个字符都敲得稳。”'
+        ],
+        'en-basic': [
+          'Focus on accuracy first, then let speed arrive naturally.',
+          'Small daily practice builds confident hands and a calm rhythm.',
+          'Type each word clearly, keep your shoulders relaxed, and continue.'
+        ],
+        mixed: [
+          '今天练习 AI typing：先稳住 accuracy，再慢慢提高 speed。',
+          'Codex helps you build tools, but your fingers still need practice.',
+          '中文输入、English words、123 numbers，都可以一起训练。'
+        ]
+      };
+
+      const passageSelect = root.querySelector('#typing-passage');
+      const customPanel = root.querySelector('#typing-custom-panel');
+      const customTextEl = root.querySelector('#typing-custom-text');
+      const applyCustomBtn = root.querySelector('#typing-apply-custom');
+      const promptEl = root.querySelector('#typing-prompt');
+      const inputEl = root.querySelector('#typing-input');
+      const resetBtn = root.querySelector('#typing-reset');
+      const nextBtn = root.querySelector('#typing-next');
+      const wpmEl = root.querySelector('#typing-wpm');
+      const accuracyEl = root.querySelector('#typing-accuracy');
+      const errorsEl = root.querySelector('#typing-errors');
+      const timeEl = root.querySelector('#typing-time');
+      const statusEl = root.querySelector('#typing-status');
+
+      let passage = '';
+      let passageIndex = 0;
+      let startedAt = 0;
+      let finished = false;
+      let timerId = 0;
+      let lastMistake = '';
+      let isComposing = false;
+      let committedInput = '';
+
+      function splitChars(text) {
+        return Array.from(text);
+      }
+
+      function customPassage() {
+        const text = customTextEl.value.trim();
+        return text || '请先粘贴文章，然后点击“使用这篇”。';
+      }
+
+      function syncCustomPanel() {
+        customPanel.classList.toggle('is-visible', passageSelect.value === 'custom');
+      }
+
+      function pickPassage(advance) {
+        syncCustomPanel();
+        if (passageSelect.value === 'custom') {
+          passage = customPassage();
+          resetState();
+          return;
+        }
+
+        const set = passages[passageSelect.value];
+        if (advance) {
+          passageIndex = (passageIndex + 1) % set.length;
+        } else {
+          passageIndex = Math.min(passageIndex, set.length - 1);
+        }
+        passage = set[passageIndex];
+        resetState();
+      }
+
+      function renderPrompt(input) {
+        const chars = splitChars(passage);
+        const typed = splitChars(input);
+        promptEl.replaceChildren();
+        chars.forEach(function (char, index) {
+          const span = document.createElement('span');
+          span.className = 'char';
+          if (char === ' ') {
+            span.classList.add('space');
+            span.textContent = '\u00a0';
+          } else {
+            span.textContent = char;
+          }
+
+          if (index < typed.length) {
+            span.classList.add(typed[index] === char ? 'correct' : 'wrong');
+          } else {
+            span.classList.add('pending');
+          }
+
+          if (index === typed.length && !finished) {
+            span.classList.add('current');
+          }
+
+          promptEl.appendChild(span);
+        });
+
+        typed.slice(chars.length).forEach(function (char) {
+          const span = document.createElement('span');
+          span.className = 'char wrong';
+          span.textContent = char === ' ' ? '\u00a0' : char;
+          promptEl.appendChild(span);
+        });
+      }
+
+      function firstErrorIndex(input) {
+        const target = splitChars(passage);
+        const typed = splitChars(input);
+        for (let index = 0; index < typed.length; index += 1) {
+          if (index >= target.length || typed[index] !== target[index]) {
+            return index;
+          }
+        }
+        return -1;
+      }
+
+      function countErrors(input) {
+        const target = splitChars(passage);
+        const typed = splitChars(input);
+        let errors = 0;
+        typed.forEach(function (char, index) {
+          if (index >= target.length || char !== target[index]) {
+            errors += 1;
+          }
+        });
+        return errors;
+      }
+
+      function countCorrect(input) {
+        const target = splitChars(passage);
+        const typed = splitChars(input);
+        let correct = 0;
+        typed.forEach(function (char, index) {
+          if (index < target.length && char === target[index]) {
+            correct += 1;
+          }
+        });
+        return correct;
+      }
+
+      function elapsedSeconds() {
+        if (!startedAt) {
+          return 0;
+        }
+        return Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+      }
+
+      function updateStats(scoredInput) {
+        const input = scoredInput === undefined ? inputEl.value : scoredInput;
+        const typedLength = splitChars(input).length;
+        const errors = countErrors(input);
+        const correct = countCorrect(input);
+        const elapsed = elapsedSeconds();
+        const minutes = Math.max(elapsed / 60, 1 / 60);
+        const wpm = startedAt ? Math.round((correct / 5) / minutes) : 0;
+        const accuracy = typedLength ? Math.max(0, Math.round((correct / typedLength) * 100)) : 100;
+
+        wpmEl.textContent = String(wpm);
+        accuracyEl.textContent = accuracy + '%';
+        errorsEl.textContent = String(errors);
+        timeEl.textContent = elapsed + 's';
+
+        const targetLength = splitChars(passage).length;
+        if (finished) {
+          statusEl.textContent = '完成，全部正确。';
+          statusEl.className = 'text-small complete';
+        } else if (lastMistake) {
+          statusEl.textContent = lastMistake;
+          statusEl.className = 'text-small text-destructive';
+        } else if (typedLength >= targetLength) {
+          statusEl.textContent = '已到末尾，请修正高亮字符。';
+          statusEl.className = 'text-small text-destructive';
+        } else {
+          statusEl.textContent = typedLength + ' / ' + targetLength + ' 个字符';
+          statusEl.className = 'text-small text-muted';
+        }
+      }
+
+      function startTimer() {
+        if (!startedAt && inputEl.value.length > 0) {
+          startedAt = Date.now();
+          timerId = window.setInterval(updateStats, 500);
+        }
+      }
+
+      function handleInput(event) {
+        if (isComposing || (event && event.isComposing)) {
+          startTimer();
+          lastMistake = '正在输入拼音，选字后判断。';
+          renderPrompt(committedInput);
+          updateStats(committedInput);
+          return;
+        }
+
+        if (finished) {
+          inputEl.value = passage;
+          lastMistake = '';
+          renderPrompt(inputEl.value);
+          updateStats();
+          return;
+        }
+
+        startTimer();
+
+        const targetLength = splitChars(passage).length;
+        const target = splitChars(passage);
+        const firstError = firstErrorIndex(inputEl.value);
+
+        if (firstError >= 0) {
+          lastMistake = firstError >= target.length
+            ? '多输入了字符，请删除多余内容。'
+            : '第 ' + (firstError + 1) + ' 个字符应输入“' + target[firstError] + '”。';
+        } else {
+          lastMistake = '';
+        }
+
+        if (splitChars(inputEl.value).length >= targetLength) {
+          finished = inputEl.value === passage;
+          if (finished) {
+            window.clearInterval(timerId);
+          }
+        } else {
+          finished = false;
+        }
+
+        renderPrompt(inputEl.value);
+        updateStats();
+      }
+
+      function resetState() {
+        window.clearInterval(timerId);
+        startedAt = 0;
+        finished = false;
+        lastMistake = '';
+        isComposing = false;
+        committedInput = '';
+        inputEl.value = '';
+        renderPrompt('');
+        updateStats();
+      }
+
+      passageSelect.addEventListener('change', function () {
+        passageIndex = 0;
+        pickPassage(false);
+        if (passageSelect.value === 'custom') {
+          customTextEl.focus();
+        } else {
+          inputEl.focus();
+        }
+      });
+
+      applyCustomBtn.addEventListener('click', function () {
+        passageIndex = 0;
+        pickPassage(false);
+        inputEl.focus();
+      });
+
+      inputEl.addEventListener('compositionstart', function () {
+        isComposing = true;
+        committedInput = inputEl.value;
+        lastMistake = '正在输入拼音，选字后判断。';
+        renderPrompt(committedInput);
+        updateStats(committedInput);
+      });
+      inputEl.addEventListener('compositionend', function () {
+        isComposing = false;
+        handleInput();
+      });
+      inputEl.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' || event.isComposing || isComposing) {
+          return;
+        }
+
+        const target = splitChars(passage);
+        const currentIndex = splitChars(inputEl.value).length;
+        if (finished || target[currentIndex] !== '\n') {
+          event.preventDefault();
+          lastMistake = finished ? '' : '这段没有换行，继续输入下一个字符。';
+          updateStats();
+        }
+      });
+      inputEl.addEventListener('input', handleInput);
+      resetBtn.addEventListener('click', function () {
+        resetState();
+        inputEl.focus();
+      });
+      nextBtn.addEventListener('click', function () {
+        pickPassage(true);
+        inputEl.focus();
+      });
+
+      pickPassage(false);
+    })();
+  </script>
+</body>
+</html>

@@ -282,7 +282,9 @@
             <option value="cn-article">中文短篇文章</option>
             <option value="cn-long">中文长篇文章</option>
             <option value="custom">自己粘贴文章</option>
-            <option value="code-basic">代码练习</option>
+            <option value="code-csharp">C# 代码练习</option>
+            <option value="code-js">JavaScript 代码练习</option>
+            <option value="code-html-css">HTML/CSS 代码练习</option>
             <option value="cn-punct">中文标点</option>
             <option value="en-basic">English basics</option>
             <option value="mixed">中英混合</option>
@@ -401,19 +403,39 @@
           '输入中文时，注意标点位置；不要着急，先准确，再提速。',
           '“慢一点没关系。”他说，“关键是每个字符都敲得稳。”'
         ],
-        'code-basic': [
+        'code-csharp': [
+          'Console.WriteLine("Hello, C#");',
+          'string name = "Alice";\nint age = 18;\nConsole.WriteLine(name);',
+          'int Add(int a, int b)\n{\n    return a + b;\n}',
+          'if (score >= 60)\n{\n    Console.WriteLine("Pass");\n}\nelse\n{\n    Console.WriteLine("Try again");\n}',
+          'for (int i = 0; i < 5; i++)\n{\n    Console.WriteLine(i);\n}',
+          'while (count > 0)\n{\n    count--;\n    Console.WriteLine(count);\n}',
+          'List<string> names = new List<string>();\nnames.Add("Tom");\nnames.Add("Lucy");',
+          'foreach (string item in names)\n{\n    Console.WriteLine(item);\n}',
+          'public class Student\n{\n    public string Name { get; set; }\n    public int Age { get; set; }\n}',
+          'Student student = new Student\n{\n    Name = "Li Ming",\n    Age = 16\n};',
+          'try\n{\n    int number = int.Parse(text);\n}\ncatch (Exception ex)\n{\n    Console.WriteLine(ex.Message);\n}',
+          'var result = numbers\n    .Where(n => n > 10)\n    .OrderBy(n => n)\n    .ToList();',
+          'public async Task<string> LoadTextAsync()\n{\n    await Task.Delay(1000);\n    return "done";\n}',
+          'namespace TypingPractice\n{\n    public class Program\n    {\n        static void Main()\n        {\n            Console.WriteLine("Start");\n        }\n    }\n}'
+        ],
+        'code-js': [
           'const name = "typing";\nconsole.log(name);',
           'function add(a, b) {\n  return a + b;\n}',
           'if (score >= 60) {\n  console.log("pass");\n} else {\n  console.log("try again");\n}',
           'const user = {\n  name: "Alice",\n  age: 18,\n  active: true\n};',
           'for (let i = 0; i < 5; i += 1) {\n  console.log(i);\n}',
           'const items = ["html", "css", "js"];\nitems.forEach(function (item) {\n  console.log(item);\n});',
-          '<button class="btn" type="button">保存</button>',
-          '<section class="card">\n  <h2>练习</h2>\n  <p>保持准确，再提高速度。</p>\n</section>',
-          '.card {\n  padding: 16px;\n  border-radius: 8px;\n  background: #ffffff;\n}',
-          'body {\n  margin: 0;\n  font-family: system-ui, sans-serif;\n}',
           'const input = document.querySelector("#typing-input");\ninput.focus();',
           'const total = prices.reduce(function (sum, price) {\n  return sum + price;\n}, 0);'
+        ],
+        'code-html-css': [
+          '<button class="btn" type="button">保存</button>',
+          '<section class="card">\n  <h2>练习</h2>\n  <p>保持准确，再提高速度。</p>\n</section>',
+          '<label for="name">Name</label>\n<input id="name" type="text">',
+          '.card {\n  padding: 16px;\n  border-radius: 8px;\n  background: #ffffff;\n}',
+          'body {\n  margin: 0;\n  font-family: system-ui, sans-serif;\n}',
+          '.button:hover {\n  background: #2367c9;\n  color: #ffffff;\n}'
         ],
         'en-basic': [
           'Focus on accuracy first, then let speed arrive naturally.',

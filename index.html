@@ -290,7 +290,10 @@
             <option value="mixed">中英混合</option>
           </select>
         </label>
-        <button id="typing-reset" class="btn" type="button">重新开始</button>
+        <div class="viz-row">
+          <button id="typing-pause" class="btn" type="button">暂停计时</button>
+          <button id="typing-reset" class="btn" type="button">重新开始</button>
+        </div>
       </div>
 
       <div id="typing-custom-panel" class="custom-panel">
@@ -455,6 +458,7 @@
       const applyCustomBtn = root.querySelector('#typing-apply-custom');
       const promptEl = root.querySelector('#typing-prompt');
       const inputEl = root.querySelector('#typing-input');
+      const pauseBtn = root.querySelector('#typing-pause');
       const resetBtn = root.querySelector('#typing-reset');
       const nextBtn = root.querySelector('#typing-next');
       const wpmEl = root.querySelector('#typing-wpm');
@@ -471,6 +475,8 @@
       let lastMistake = '';
       let isComposing = false;
       let committedInput = '';
+      let paused = false;
+      let elapsedBeforePause = 0;
 
       function splitChars(text) {
         return Array.from(text);
@@ -584,10 +590,8 @@
       }
 
       function elapsedSeconds() {
-        if (!startedAt) {
-          return 0;
-        }
-        return Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+        const activeElapsed = startedAt ? Date.now() - startedAt : 0;
+        return Math.max(0, Math.floor((elapsedBeforePause + activeElapsed) / 1000));
       }
 
       function updateStats(scoredInput) {
@@ -597,7 +601,7 @@
         const correct = countCorrect(input);
         const elapsed = elapsedSeconds();
         const minutes = Math.max(elapsed / 60, 1 / 60);
-        const wpm = startedAt ? Math.round((correct / 5) / minutes) : 0;
+        const wpm = (startedAt || elapsedBeforePause) ? Math.round((correct / 5) / minutes) : 0;
         const accuracy = typedLength ? Math.max(0, Math.round((correct / typedLength) * 100)) : 100;
 
         wpmEl.textContent = String(wpm);
@@ -609,6 +613,9 @@
         if (finished) {
           statusEl.textContent = '完成，全部正确。';
           statusEl.className = 'text-small complete';
+        } else if (paused) {
+          statusEl.textContent = '计时已暂停，点击“继续计时”恢复。';
+          statusEl.className = 'text-small text-muted';
         } else if (lastMistake) {
           statusEl.textContent = lastMistake;
           statusEl.className = 'text-small text-destructive';
@@ -622,7 +629,7 @@
       }
 
       function startTimer() {
-        if (!startedAt && inputEl.value.length > 0) {
+        if (!startedAt && !paused && inputEl.value.length > 0) {
           startedAt = Date.now();
           timerId = window.setInterval(updateStats, 500);
         }
@@ -662,6 +669,10 @@
         if (splitChars(inputEl.value).length >= targetLength) {
           finished = inputEl.value === passage;
           if (finished) {
+            if (startedAt) {
+              elapsedBeforePause += Date.now() - startedAt;
+              startedAt = 0;
+            }
             window.clearInterval(timerId);
           }
         } else {
@@ -679,8 +690,37 @@
         lastMistake = '';
         isComposing = false;
         committedInput = '';
+        paused = false;
+        elapsedBeforePause = 0;
+        pauseBtn.textContent = '暂停计时';
         inputEl.value = '';
         renderPrompt('');
+        updateStats();
+      }
+
+      function togglePause() {
+        if (finished) {
+          return;
+        }
+
+        if (paused) {
+          paused = false;
+          pauseBtn.textContent = '暂停计时';
+          if (inputEl.value.length > 0) {
+            startedAt = Date.now();
+            window.clearInterval(timerId);
+            timerId = window.setInterval(updateStats, 500);
+          }
+        } else {
+          paused = true;
+          pauseBtn.textContent = '继续计时';
+          if (startedAt) {
+            elapsedBeforePause += Date.now() - startedAt;
+            startedAt = 0;
+          }
+          window.clearInterval(timerId);
+        }
+
         updateStats();
       }
 
@@ -725,6 +765,10 @@
         }
       });
       inputEl.addEventListener('input', handleInput);
+      pauseBtn.addEventListener('click', function () {
+        togglePause();
+        inputEl.focus();
+      });
       resetBtn.addEventListener('click', function () {
         resetState();
         inputEl.focus();
